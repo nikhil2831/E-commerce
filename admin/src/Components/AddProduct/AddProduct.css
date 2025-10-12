@@ -1,0 +1,123 @@
+.add-product {
+  background-color: #ffffff;
+  padding: 25px 30px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  max-width: 650px;
+  margin: 40px auto;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.addproduct-itemfield {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+
+.addproduct-itemfield p {
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #444;
+  font-size: 14px;
+}
+
+.addproduct-itemfield input[type="text"],
+.add-product-selector {
+  padding: 10px 14px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.addproduct-itemfield input[type="text"]:focus,
+.add-product-selector:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.4);
+}
+
+.addproduct-price {
+  display: flex;
+  gap: 20px;
+}
+
+.add-product-selector {
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.addproduct-thumnail-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.addproduct-thumnail-img:hover {
+  border-color: #007bff;
+}
+
+.addproduct-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.addproduct-btn:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.addproduct-btn:active {
+  transform: translateY(0);
+}
+
+
+@media (max-width: 768px) {
+  .add-product {
+    padding: 20px;
+    margin: 20px;
+  }
+
+  .addproduct-price {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .addproduct-thumnail-img {
+    width: 100%;
+    max-width: 250px;
+    height: auto;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .add-product {
+    padding: 15px;
+  }
+
+  .addproduct-itemfield input[type="text"],
+  .add-product-selector {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+
+  .addproduct-btn {
+    font-size: 15px;
+    padding: 10px;
+  }
+}
