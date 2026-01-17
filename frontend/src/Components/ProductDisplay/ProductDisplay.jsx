@@ -7,17 +7,14 @@ import { ShopContext } from '../../Context/ShopContext'
 const ProductDisplay = ({ product }) => {
   const { addToCart } = useContext(ShopContext);
   
-  // All hooks must be called before any early returns
   const [mainImg, setMainImg] = useState('');
 
-  // Update main image when product changes
   useEffect(() => {
     if (product?.image) {
       setMainImg(product.image);
     }
   }, [product]);
 
-  // Guard against undefined product AFTER all hooks
   if (!product) {
     return (
       <div className="loading" style={{ 

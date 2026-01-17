@@ -8,7 +8,7 @@ import down_arrow from '../Assets/down-arrow.png'
 
 export const Navbar = () => {
   const [menu, setMenu] = useState("shop")
-  const { getTotalCartItems } = useContext(ShopContext)
+  const { getTotalCartItems, isLoggedIn, logout } = useContext(ShopContext)
   const menuRef = useRef()
 
   const dropdown_toggle = (e) => {
@@ -16,6 +16,12 @@ export const Navbar = () => {
       menuRef.current.classList.toggle("nav-menu-visible")
     }
     e.currentTarget.classList.toggle("open")
+  }
+
+  const handleLogout = () => {
+    if(window.confirm('Are you sure you want to logout?')) {
+      logout();
+    }
   }
 
   return (
@@ -42,7 +48,11 @@ export const Navbar = () => {
       </ul>
 
       <div className="nav-login-cart">
-        <Link to='/login'><button>Login</button></Link>
+        {isLoggedIn ? (
+          <button onClick={handleLogout}>Logout</button>
+        ) : (
+          <Link to='/login'><button>Login</button></Link>
+        )}
         <Link to='/cart'><img src={cart_icon} alt="Cart" /></Link>
         <div className="nav-cart-count">{typeof getTotalCartItems === 'function' ? getTotalCartItems() : 0}</div>
       </div>

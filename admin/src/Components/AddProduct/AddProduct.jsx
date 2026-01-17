@@ -57,6 +57,13 @@ const AddProduct = () => {
       return;
     }
 
+    const adminToken = localStorage.getItem('admin-token');
+    if (!adminToken) {
+      alert('Admin authentication required. Please login again.');
+      window.location.reload();
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -68,6 +75,10 @@ const AddProduct = () => {
           setLoading(false);
           return;
         }
+      } else {
+        alert('Please select a product image');
+        setLoading(false);
+        return;
       }
 
       const product = {
@@ -83,6 +94,7 @@ const AddProduct = () => {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
+          'admin-token': adminToken,
         },
         body: JSON.stringify(product)
       });

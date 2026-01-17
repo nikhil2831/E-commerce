@@ -12,29 +12,49 @@ const getDefaultCart = () => {
 }
 
 const ShopContextProvider = (props) => {
+    // Always use local assets - they have proper images
     const [allProducts, setAllProducts] = useState(all_product);
     const [cartItems, setCartItems] = useState(getDefaultCart());
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userInfo, setUserInfo] = useState(null);
 
-   useEffect(() => {
-    console.log("=== SHOP CONTEXT LOADING ===");
-    
-    fetch("http://localhost:4000/allproducts")
-        .then((response) => response.json())
-        .then((backendProducts) => {
-            console.log("Backend products received:", backendProducts);
-            
-            if (backendProducts && Array.isArray(backendProducts)) {
-                setAllProducts(backendProducts); // Use ONLY backend products
-                console.log("Set products to:", backendProducts.map(p => ({ id: p.id, name: p.name })));
-            }
-        })
-        .catch((error) => {
-            console.error("Error fetching products:", error);
-        });
-}, []);
+    // Check if user is logged in
+    useEffect(() => {
+        const token = localStorage.getItem('auth-token');
+        if (token) {
+            setIsLoggedIn(true);
+            // Load cart from backend
+            loadCartFromBackend();
+        }
+    }, []);
+
+    // Load cart from backend
+    const loadCartFromBackend = () => {
+        const token = localStorage.getItem('auth-token');
+        if (token) {
+            fetch('http://localhost:4000/getcart', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'auth-token': token,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({}),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data && typeof data === 'object') {
+                    setCartItems(data);
+                }
+            })
+            .catch((error) => console.error("Error loading cart:", error));
+        }
+    };
+
+    // We're using local all_product.js which has proper images from Assets folder
+    // No need to fetch from backend and override with broken image URLs
     
     const addToCart = (itemId) => {
-        console.log("Adding to cart - Item ID:", itemId);
         setCartItems((prev) => ({ 
             ...prev, 
             [itemId]: (prev[itemId] || 0) + 1 
@@ -99,6 +119,7 @@ const ShopContextProvider = (props) => {
 
     useEffect(() => {
         if(localStorage.getItem('auth-token')) {
+            setIsLoggedIn(true);
             fetch('http://localhost:4000/getcart', {
                 method: 'POST',
                 headers: {
@@ -118,13 +139,31 @@ const ShopContextProvider = (props) => {
         }
     }, []);
 
+    const logout = () => {
+        localStorage.removeItem('auth-token');
+        setIsLoggedIn(false);
+        setUserInfo(null);
+        setCartItems(getDefaultCart());
+        window.location.replace('/');
+    };
+
+    const login = (token, user) => {
+        localStorage.setItem('auth-token', token);
+        setIsLoggedIn(true);
+        setUserInfo(user);
+    };
+
     const contextValue = {
         getTotalCartItems, 
         getTotalCartAmount,
         all_product: allProducts,
         cartItems, 
         addToCart, 
-        removeFromCart 
+        removeFromCart,
+        isLoggedIn,
+        userInfo,
+        logout,
+        login
     };
 
     return (
