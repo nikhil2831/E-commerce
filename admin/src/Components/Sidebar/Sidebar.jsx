@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import "./Sidebar.css"
-import add_product_icon from "../../assets/Product_cart.svg"
+import add_product_icon from "../../assets/Product_Cart.svg"
 import list_product_icon from "../../assets/Product_list_icon.svg"
 
 const Sidebar = ({ setActive }) => {
