@@ -15,7 +15,10 @@ const corsOptions = {
     process.env.FRONTEND_URL || 'http://localhost:3000',
     process.env.ADMIN_URL || 'http://localhost:5173',
     'http://localhost:3000',
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'https://e-commerce-plum-kappa-97.vercel.app',
+    'https://e-commerce-ep29-pn08m1zcd-nikhil2831s-projects.vercel.app',
+    'https://e-commerce-kk9kxsuhm-nikhil2831s-projects.vercel.app'
   ],
   credentials: true,
   optionsSuccessStatus: 200
