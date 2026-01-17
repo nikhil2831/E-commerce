@@ -26,7 +26,6 @@ function App() {
 
   useEffect(() => {
     // Check authentication on mount
-    const token = localStorage.getItem('auth-token');
     setLoading(false);
   }, []);
 

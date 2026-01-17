@@ -13,7 +13,7 @@ const getDefaultCart = () => {
 
 const ShopContextProvider = (props) => {
     // Always use local assets - they have proper images
-    const [allProducts, setAllProducts] = useState(all_product);
+    const [allProducts] = useState(all_product);
     const [cartItems, setCartItems] = useState(getDefaultCart());
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userInfo, setUserInfo] = useState(null);
