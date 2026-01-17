@@ -24,7 +24,7 @@ export default function LoginSignup() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:4000/login', {
+      const response = await fetch('https://e-commerce-hl6k.onrender.com/login', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -63,7 +63,7 @@ export default function LoginSignup() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:4000/signup', {
+      const response = await fetch('https://e-commerce-hl6k.onrender.com/signup', {
         method: 'POST',
         headers: {
           Accept: 'application/json',

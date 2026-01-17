@@ -35,7 +35,7 @@ const AddProduct = () => {
     formData.append('product', productDetails.image);
     
     try {
-      const response = await fetch('http://localhost:4000/upload', {
+      const response = await fetch('https://e-commerce-hl6k.onrender.com/upload', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -89,7 +89,7 @@ const AddProduct = () => {
         old_price: Number(productDetails.old_price),
       };
 
-      const response = await fetch('http://localhost:4000/addproduct', {
+      const response = await fetch('https://e-commerce-hl6k.onrender.com/addproduct', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
