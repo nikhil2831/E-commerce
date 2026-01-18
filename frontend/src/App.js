@@ -9,6 +9,11 @@ import Navbar from './Components/Navbar/Navbar';
 import Footer from './Components/Footer/Footer';
 import { ShopContext } from './Context/ShopContext';
 
+// Import banner images
+import banner_mens from './Components/Assets/banner_mens.png';
+import banner_women from './Components/Assets/banner_women.png';
+import banner_kids from './Components/Assets/banner_kids.png';
+
 // Protected Route Component
 function ProtectedRoute({ children }) {
   const { isLoggedIn } = useContext(ShopContext);
@@ -59,17 +64,17 @@ function App() {
           } />
           <Route path='/mens' element={
             <ProtectedRoute>
-              <ShopCategory category="men" />
+              <ShopCategory category="men" banner={banner_mens} />
             </ProtectedRoute>
           } />
           <Route path='/womens' element={
             <ProtectedRoute>
-              <ShopCategory category="women" />
+              <ShopCategory category="women" banner={banner_women} />
             </ProtectedRoute>
           } />
           <Route path='/kids' element={
             <ProtectedRoute>
-              <ShopCategory category="kids" />
+              <ShopCategory category="kids" banner={banner_kids} />
             </ProtectedRoute>
           } />
           <Route path='/product/:productId' element={
