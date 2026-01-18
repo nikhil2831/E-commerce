@@ -75,9 +75,9 @@ export default function LoginSignup() {
       const responseData = await response.json();
 
       if (responseData.success) {
-        login(responseData.token, responseData.user);
-        alert('Signup successful!');
-        window.location.replace("/");
+        alert('Account created successfully! Please login.');
+        setFormData({ username: "", email: formData.email, password: "" });
+        setState("Login");
       } else {
         alert(responseData.errors || 'Signup failed');
       }
