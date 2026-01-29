@@ -9,7 +9,7 @@ const path = require("path");
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
 
-// Security & Performance Middleware
+// CORS configuration
 const corsOptions = {
   origin: [
     process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -27,13 +27,12 @@ const corsOptions = {
 app.use(express.json({ limit: '10mb' }));
 app.use(cors(corsOptions));
 
-// Ensure uploads directory exists
+
 const uploadsDir = "./uploads/images";
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://nikhilkumar805544_db_user:nikhil2831@cluster0.s5drxs6.mongodb.net/e-commerce?retryWrites=true&w=majority";
 
 mongoose
@@ -51,7 +50,7 @@ mongoose
     console.log("3. IP whitelist in MongoDB Atlas\n");
   });
 
-// Test route
+// Health check route
 app.get("/", (req, res) => {
   res.json({
     message: "E-commerce Backend API",
@@ -71,53 +70,11 @@ app.get("/", (req, res) => {
   });
 });
 
-// File Upload Configuration
-const storage = multer.diskStorage({
-  destination: "./uploads/images",
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`
-    );
-  },
-});
 
-const upload = multer({ 
-  storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed'));
-    }
-  }
-});
 
 app.use("/images", express.static("uploads/images"));
 
-// Image Upload Endpoint
-app.post("/upload", upload.single("product"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({
-      success: 0,
-      error: "No file uploaded"
-    });
-  }
 
-  res.json({
-    success: 1,
-    image_url: `http://localhost:${port}/images/${req.file.filename}`,
-  });
-});
-
-// Product Schema
 const Product = mongoose.model("Product", {
   id: {
     type: Number,
@@ -159,7 +116,7 @@ const Product = mongoose.model("Product", {
   },
 });
 
-// Admin Schema
+// Admin schema
 const Admin = mongoose.model("Admin", {
   email: {
     type: String,
@@ -186,7 +143,7 @@ const Admin = mongoose.model("Admin", {
   },
 });
 
-// Admin Middleware
+// Admin authentication middleware
 const fetchAdmin = async (req, res, next) => {
   const token = req.header("admin-token");
   
@@ -210,7 +167,7 @@ const fetchAdmin = async (req, res, next) => {
   }
 };
 
-// Admin Login
+// Admin login
 app.post("/admin/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -282,12 +239,11 @@ app.post("/admin/login", async (req, res) => {
   }
 });
 
-// Add Product (Protected - Admin Only)
+// Add product (admin only)
 app.post("/addproduct", fetchAdmin, async (req, res) => {
   try {
     const { name, image, category, new_price, old_price } = req.body;
 
-    // Validation
     if (!name || !image || !category || !new_price || !old_price) {
       return res.status(400).json({
         success: false,
@@ -325,7 +281,7 @@ app.post("/addproduct", fetchAdmin, async (req, res) => {
   }
 });
 
-// Remove Product (Protected - Admin Only)
+// Remove product 
 app.post("/removeproduct", fetchAdmin, async (req, res) => {
   try {
     const { id } = req.body;
@@ -362,7 +318,7 @@ app.post("/removeproduct", fetchAdmin, async (req, res) => {
   }
 });
 
-// Get All Products
+// Get all products
 app.get("/allproducts", async (req, res) => {
   try {
     const products = await Product.find({}).sort({ date: -1 });
@@ -378,7 +334,7 @@ app.get("/allproducts", async (req, res) => {
   }
 });
 
-// Get Products by Category
+// Get products by category
 app.get("/products/:category", async (req, res) => {
   try {
     const category = req.params.category.toLowerCase();
@@ -404,7 +360,7 @@ app.get("/products/:category", async (req, res) => {
   }
 });
 
-// User Schema
+// User schema
 const User = mongoose.model("Users", {
   name: {
     type: String,
@@ -433,7 +389,7 @@ const User = mongoose.model("Users", {
   },
 });
 
-// User Signup
+// User signup
 app.post("/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -504,7 +460,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// User Login
+// User login
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -561,7 +517,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Authentication Middleware
+// User authentication middleware
 const fetchUser = async (req, res, next) => {
   const token = req.header("auth-token");
   
@@ -585,7 +541,7 @@ const fetchUser = async (req, res, next) => {
   }
 };
 
-// New Collections (Latest 8 products)
+// New collections (latest 8 products)
 app.get("/newcollections", async (req, res) => {
   try {
     const products = await Product.find({}).sort({ date: -1 }).limit(8);
@@ -601,7 +557,7 @@ app.get("/newcollections", async (req, res) => {
   }
 });
 
-// Popular in Women
+// Popular in women
 app.get("/popularinwomen", async (req, res) => {
   try {
     const products = await Product.find({ 
@@ -620,7 +576,7 @@ app.get("/popularinwomen", async (req, res) => {
   }
 });
 
-// Popular in Men
+// Popular in men
 app.get("/popularinmen", async (req, res) => {
   try {
     const products = await Product.find({ 
@@ -639,7 +595,7 @@ app.get("/popularinmen", async (req, res) => {
   }
 });
 
-// Popular in Kids
+// Popular in kids
 app.get("/popularinkids", async (req, res) => {
   try {
     const products = await Product.find({ 
@@ -658,7 +614,7 @@ app.get("/popularinkids", async (req, res) => {
   }
 });
 
-// Add to Cart
+// Add to cart
 app.post("/addtocart", fetchUser, async (req, res) => {
   try {
     const { itemId } = req.body;
@@ -704,7 +660,7 @@ app.post("/addtocart", fetchUser, async (req, res) => {
   }
 });
 
-// Remove from Cart
+// Remove from cart
 app.post("/removefromcart", fetchUser, async (req, res) => {
   try {
     const { itemId } = req.body;
@@ -749,7 +705,7 @@ app.post("/removefromcart", fetchUser, async (req, res) => {
   }
 });
 
-// Get Cart Data
+// Get cart data
 app.post("/getcart", fetchUser, async (req, res) => {
   try {
     const userData = await User.findOne({ _id: req.user.id });
@@ -772,7 +728,7 @@ app.post("/getcart", fetchUser, async (req, res) => {
   }
 });
 
-// Global Error Handler
+// Global error handler
 app.use((error, req, res, next) => {
   console.error("Global error handler:", error);
   res.status(500).json({
@@ -782,80 +738,9 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Seed Sample Products (One-time use to populate database)
-app.post("/seedproducts", fetchAdmin, async (req, res) => {
-  try {
-    // Check if products already exist
-    const existingProducts = await Product.countDocuments();
-    if (existingProducts > 0) {
-      return res.json({
-        success: false,
-        message: `Database already has ${existingProducts} products. Clear them first if you want to reseed.`
-      });
-    }
+// Seed endpoint removed - use admin panel to add products manually
 
-    const sampleProducts = [
-      // Women's Products (1-12)
-      { id: 1, name: "Striped Flutter Sleeve Peplum Blouse", category: "women", image: "https://i.ibb.co/qxKZqmy/product-1.png", new_price: 50, old_price: 80 },
-      { id: 2, name: "Elegant Floral Summer Dress", category: "women", image: "https://i.ibb.co/7nnqVnV/product-2.png", new_price: 85, old_price: 120 },
-      { id: 3, name: "Casual Cotton Maxi Dress", category: "women", image: "https://i.ibb.co/d0h9R55/product-3.png", new_price: 60, old_price: 100 },
-      { id: 4, name: "Designer Party Wear Gown", category: "women", image: "https://i.ibb.co/qNQh1QP/product-4.png", new_price: 100, old_price: 150 },
-      { id: 5, name: "Trendy Crop Top Collection", category: "women", image: "https://i.ibb.co/9bPD8Xr/product-5.png", new_price: 45, old_price: 70 },
-      { id: 6, name: "Stylish Denim Jacket", category: "women", image: "https://i.ibb.co/7nnqVnV/product-2.png", new_price: 85, old_price: 120 },
-      { id: 7, name: "Printed Chiffon Top", category: "women", image: "https://i.ibb.co/qxKZqmy/product-1.png", new_price: 55, old_price: 85 },
-      { id: 8, name: "Bohemian Style Skirt", category: "women", image: "https://i.ibb.co/d0h9R55/product-3.png", new_price: 65, old_price: 95 },
-      { id: 9, name: "Classic Formal Blazer", category: "women", image: "https://i.ibb.co/qNQh1QP/product-4.png", new_price: 120, old_price: 180 },
-      { id: 10, name: "Cozy Knit Sweater", category: "women", image: "https://i.ibb.co/9bPD8Xr/product-5.png", new_price: 75, old_price: 110 },
-      { id: 11, name: "Silk Evening Blouse", category: "women", image: "https://i.ibb.co/7nnqVnV/product-2.png", new_price: 90, old_price: 130 },
-      { id: 12, name: "Vintage Lace Dress", category: "women", image: "https://i.ibb.co/d0h9R55/product-3.png", new_price: 110, old_price: 160 },
-      
-      // Men's Products (13-24)
-      { id: 13, name: "Classic Fit Cotton Shirt", category: "men", image: "https://i.ibb.co/RD2Hv7z/product-13.png", new_price: 55, old_price: 85 },
-      { id: 14, name: "Slim Fit Formal Trousers", category: "men", image: "https://i.ibb.co/7nnqVnV/product-2.png", new_price: 70, old_price: 100 },
-      { id: 15, name: "Premium Leather Jacket", category: "men", image: "https://i.ibb.co/qNQh1QP/product-4.png", new_price: 150, old_price: 220 },
-      { id: 16, name: "Casual Denim Jeans", category: "men", image: "https://i.ibb.co/d0h9R55/product-3.png", new_price: 65, old_price: 95 },
-      { id: 17, name: "Sports Polo T-Shirt", category: "men", image: "https://i.ibb.co/RD2Hv7z/product-13.png", new_price: 40, old_price: 60 },
-      { id: 18, name: "Business Casual Blazer", category: "men", image: "https://i.ibb.co/qNQh1QP/product-4.png", new_price: 130, old_price: 190 },
-      { id: 19, name: "Cotton Chino Pants", category: "men", image: "https://i.ibb.co/d0h9R55/product-3.png", new_price: 60, old_price: 90 },
-      { id: 20, name: "Graphic Print Hoodie", category: "men", image: "https://i.ibb.co/7nnqVnV/product-2.png", new_price: 75, old_price: 110 },
-      { id: 21, name: "Striped Formal Shirt", category: "men", image: "https://i.ibb.co/RD2Hv7z/product-13.png", new_price: 50, old_price: 75 },
-      { id: 22, name: "Summer Shorts Collection", category: "men", image: "https://i.ibb.co/d0h9R55/product-3.png", new_price: 45, old_price: 65 },
-      { id: 23, name: "Wool Blend Overcoat", category: "men", image: "https://i.ibb.co/qNQh1QP/product-4.png", new_price: 180, old_price: 250 },
-      { id: 24, name: "Casual Linen Shirt", category: "men", image: "https://i.ibb.co/7nnqVnV/product-2.png", new_price: 55, old_price: 80 },
-      
-      // Kids Products (25-36)
-      { id: 25, name: "Cute Cartoon T-Shirt", category: "kid", image: "https://i.ibb.co/9bPD8Xr/product-5.png", new_price: 25, old_price: 40 },
-      { id: 26, name: "Colorful Summer Dress", category: "kid", image: "https://i.ibb.co/qxKZqmy/product-1.png", new_price: 35, old_price: 55 },
-      { id: 27, name: "Denim Dungarees", category: "kid", image: "https://i.ibb.co/d0h9R55/product-3.png", new_price: 40, old_price: 60 },
-      { id: 28, name: "Superhero Print Jacket", category: "kid", image: "https://i.ibb.co/7nnqVnV/product-2.png", new_price: 50, old_price: 75 },
-      { id: 29, name: "Floral Party Frock", category: "kid", image: "https://i.ibb.co/qxKZqmy/product-1.png", new_price: 45, old_price: 70 },
-      { id: 30, name: "Sporty Track Suit", category: "kid", image: "https://i.ibb.co/9bPD8Xr/product-5.png", new_price: 55, old_price: 85 },
-      { id: 31, name: "Cozy Winter Sweater", category: "kid", image: "https://i.ibb.co/7nnqVnV/product-2.png", new_price: 40, old_price: 60 },
-      { id: 32, name: "Printed Cotton Shorts", category: "kid", image: "https://i.ibb.co/d0h9R55/product-3.png", new_price: 25, old_price: 40 },
-      { id: 33, name: "School Uniform Set", category: "kid", image: "https://i.ibb.co/qNQh1QP/product-4.png", new_price: 60, old_price: 90 },
-      { id: 34, name: "Casual Hoodie Collection", category: "kid", image: "https://i.ibb.co/9bPD8Xr/product-5.png", new_price: 45, old_price: 70 },
-      { id: 35, name: "Princess Costume Dress", category: "kid", image: "https://i.ibb.co/qxKZqmy/product-1.png", new_price: 65, old_price: 100 },
-      { id: 36, name: "Adventure Explorer Set", category: "kid", image: "https://i.ibb.co/7nnqVnV/product-2.png", new_price: 50, old_price: 80 },
-    ];
-
-    await Product.insertMany(sampleProducts);
-    
-    res.json({
-      success: true,
-      message: `Successfully seeded ${sampleProducts.length} products!`,
-      products: sampleProducts.length
-    });
-  } catch (error) {
-    console.error("Error seeding products:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to seed products",
-      details: error.message
-    });
-  }
-});
-
-// 404 Handler - FIXED VERSION
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -877,12 +762,11 @@ app.use((req, res) => {
       "POST /addtocart",
       "POST /removefromcart",
       "POST /getcart",
-      "POST /upload",
     ]
   });
 });
 
-// Start Server
+// Start server
 app.listen(port, (error) => {
   if (!error) {
     console.log(`
