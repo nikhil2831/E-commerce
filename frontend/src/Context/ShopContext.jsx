@@ -46,7 +46,7 @@ const ShopContextProvider = (props) => {
     const loadCartFromBackend = () => {
         const token = localStorage.getItem('auth-token');
         if (token) {
-            fetch('http://localhost:4000/getcart', {
+            fetch(`${API_URL}/getcart`, {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
@@ -75,7 +75,7 @@ const ShopContextProvider = (props) => {
         }));
         
         if(localStorage.getItem('auth-token')) {
-            fetch('https://e-commerce-hl6k.onrender.com/getcart', {
+            fetch(`${API_URL}/addtocart`, {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
@@ -95,7 +95,7 @@ const ShopContextProvider = (props) => {
         }));
 
         if(localStorage.getItem('auth-token')) {
-            fetch('https://e-commerce-hl6k.onrender.com/removefromcart', {
+            fetch(`${API_URL}/removefromcart`, {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
@@ -134,7 +134,7 @@ const ShopContextProvider = (props) => {
     useEffect(() => {
         if(localStorage.getItem('auth-token')) {
             setIsLoggedIn(true);
-            fetch('http://localhost:4000/getcart', {
+            fetch(`${API_URL}/getcart`, {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
