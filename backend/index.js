@@ -490,7 +490,7 @@ app.post("/login", async (req, res) => {
       });
     }
 
-    const passwordMatch = password === user.password; // In production, use bcrypt
+    const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({
         success: false,
@@ -501,10 +501,11 @@ app.post("/login", async (req, res) => {
     const data = {
       user: {
         id: user.id,
+        role: user.role,
       },
     };
 
-    const token = jwt.sign(data, "secret_ecom", { expiresIn: "7d" });
+    const token = jwt.sign(data, JWT_SECRET, { expiresIn: "7d" });
     
     console.log("User logged in successfully:", user.email);
     res.json({ 
@@ -514,6 +515,7 @@ app.post("/login", async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
       }
     });
   } catch (error) {
