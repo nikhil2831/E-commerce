@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import './AdminLogin.css';
 
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://e-commerce-hl6k.onrender.com';
+
 const AdminLogin = ({ onLogin }) => {
   const [formData, setFormData] = useState({
     email: '',
@@ -29,7 +32,8 @@ const AdminLogin = ({ onLogin }) => {
     setError('');
 
     try {
-      const response = await fetch('https://e-commerce-hl6k.onrender.com/admin/login', {
+      
+      const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -41,10 +45,17 @@ const AdminLogin = ({ onLogin }) => {
       const data = await response.json();
 
       if (data.success) {
-        localStorage.setItem('admin-token', data.token);
-        localStorage.setItem('admin-info', JSON.stringify(data.admin));
+        // Check if user has admin role
+        if (data.user.role !== 'admin') {
+          setError('Access denied. Admin privileges required.');
+          return;
+        }
+        
+        // Store auth token (same token for admin and users)
+        localStorage.setItem('auth-token', data.token);
+        localStorage.setItem('admin-info', JSON.stringify(data.user));
         alert('Login successful!');
-        onLogin(data.admin);
+        onLogin(data.user);
       } else {
         setError(data.errors || 'Login failed');
       }
@@ -94,6 +105,9 @@ const AdminLogin = ({ onLogin }) => {
           </button>
         </form>
         
+        <p className="admin-note">
+          Note: Admin accounts are created manually in the database.
+        </p>
       </div>
     </div>
   );

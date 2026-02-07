@@ -9,13 +9,27 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if admin is already logged in
-    const token = localStorage.getItem('admin-token');
+    // Check if admin is already logged in (using unified auth-token)
+    const token = localStorage.getItem('auth-token');
     const savedAdminInfo = localStorage.getItem('admin-info');
     
     if (token && savedAdminInfo) {
-      setIsAuthenticated(true);
-      setAdminInfo(JSON.parse(savedAdminInfo));
+      try {
+        const adminData = JSON.parse(savedAdminInfo);
+        // Verify it's an admin user
+        if (adminData.role === 'admin') {
+          setIsAuthenticated(true);
+          setAdminInfo(adminData);
+        } else {
+          // Not an admin, clear the stored data
+          localStorage.removeItem('auth-token');
+          localStorage.removeItem('admin-info');
+        }
+      } catch (e) {
+        console.error("Error parsing admin info:", e);
+        localStorage.removeItem('auth-token');
+        localStorage.removeItem('admin-info');
+      }
     }
     setLoading(false);
   }, []);
@@ -26,7 +40,7 @@ const App = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('admin-token');
+    localStorage.removeItem('auth-token');
     localStorage.removeItem('admin-info');
     setIsAuthenticated(false);
     setAdminInfo(null);

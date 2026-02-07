@@ -8,6 +8,11 @@ const multer = require("multer");
 const path = require("path");
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
+const bcrypt = require("bcrypt");
+
+// JWT Secrets
+const JWT_SECRET = process.env.JWT_SECRET || "secret_ecom_unified_auth";
+const SALT_ROUNDS = 10;
 
 // CORS configuration
 const corsOptions = {
@@ -63,8 +68,10 @@ app.get("/", (req, res) => {
       popularInMen: "/popularinmen",
       popularInKids: "/popularinkids",
       auth: {
-        signup: "/signup",
-        login: "/login"
+        signup: "/signup (POST - users only)",
+        login: "/login (POST - unified for admin & user)",
+        adminDashboard: "/admin/dashboard (GET - protected)",
+        userHome: "/user/home (GET - protected)"
       }
     }
   });
@@ -116,36 +123,33 @@ const Product = mongoose.model("Product", {
   },
 });
 
-// Admin schema
-const Admin = mongoose.model("Admin", {
-  email: {
-    type: String,
-    unique: true,
-    required: true,
-    lowercase: true,
-    trim: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  role: {
-    type: String,
-    default: "admin",
-  },
-  date: {
-    type: Date,
-    default: Date.now,
-  },
-});
+// User authentication middleware
+const fetchUser = async (req, res, next) => {
+  const token = req.header("auth-token");
+  
+  if (!token) {
+    return res.status(401).json({ 
+      success: false,
+      errors: "Access denied. No token provided." 
+    });
+  }
 
-// Admin authentication middleware
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded.user;
+    next();
+  } catch (error) {
+    console.error("Token verification error:", error);
+    res.status(401).json({ 
+      success: false,
+      errors: "Invalid or expired token" 
+    });
+  }
+};
+
+// Admin-only middleware (checks if user has admin role)
 const fetchAdmin = async (req, res, next) => {
-  const token = req.header("admin-token");
+  const token = req.header("auth-token");
   
   if (!token) {
     return res.status(401).json({ 
@@ -155,8 +159,14 @@ const fetchAdmin = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, "secret_admin_ecom");
-    req.admin = decoded.admin;
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        errors: "Access denied. Admin privileges required."
+      });
+    }
+    req.user = decoded.user;
     next();
   } catch (error) {
     console.error("Admin token verification error:", error);
@@ -166,78 +176,6 @@ const fetchAdmin = async (req, res, next) => {
     });
   }
 };
-
-// Admin login
-app.post("/admin/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        errors: "Email and password are required",
-      });
-    }
-
-    let admin = await Admin.findOne({ email: email.toLowerCase() });
-    
-    // Create default admin if not exists
-    if (!admin && email === "admin@indramart.com" && password === "admin123") {
-      admin = new Admin({
-        name: "Admin",
-        email: "admin@indramart.com",
-        password: "admin123",
-        role: "admin"
-      });
-      await admin.save();
-      console.log("Default admin created");
-    }
-
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        errors: "Invalid email or password",
-      });
-    }
-
-    const passwordMatch = password === admin.password;
-    if (!passwordMatch) {
-      return res.status(401).json({
-        success: false,
-        errors: "Invalid email or password",
-      });
-    }
-
-    const data = {
-      admin: {
-        id: admin.id,
-        email: admin.email,
-        role: admin.role,
-      },
-    };
-
-    const token = jwt.sign(data, "secret_admin_ecom", { expiresIn: "7d" });
-    
-    console.log("Admin logged in successfully:", admin.email);
-    res.json({ 
-      success: true, 
-      token,
-      admin: {
-        id: admin.id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-      }
-    });
-  } catch (error) {
-    console.error("Admin login error:", error);
-    res.status(500).json({
-      success: false,
-      errors: "Internal server error",
-      details: error.message,
-    });
-  }
-});
 
 // Add product (admin only)
 app.post("/addproduct", fetchAdmin, async (req, res) => {
@@ -264,7 +202,7 @@ app.post("/addproduct", fetchAdmin, async (req, res) => {
     });
 
     await product.save();
-    console.log("Product saved successfully by admin:", req.admin.email, product);
+    console.log("Product saved successfully by admin:", req.user.id, product);
 
     res.json({
       success: true,
@@ -360,7 +298,7 @@ app.get("/products/:category", async (req, res) => {
   }
 });
 
-// User schema
+// Unified User schema (for both users and admins)
 const User = mongoose.model("Users", {
   name: {
     type: String,
@@ -377,7 +315,12 @@ const User = mongoose.model("Users", {
   password: {
     type: String,
     required: true,
-    minlength: 6,
+    minlength: 8,
+  },
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user",
   },
   cartData: {
     type: Object,
@@ -389,26 +332,86 @@ const User = mongoose.model("Users", {
   },
 });
 
-// User signup
+// Create default admin on server startup
+const createDefaultAdmin = async () => {
+  try {
+    const adminEmail = "nikhiladmin@gmail.com";
+    const adminPassword = "adminnikhil";
+    
+    // Check if default admin already exists
+    const existingAdmin = await User.findOne({ email: adminEmail });
+    if (existingAdmin) {
+      console.log("✅ Default admin already exists");
+      return;
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(adminPassword, SALT_ROUNDS);
+    
+    // Create default admin
+    const defaultAdmin = new User({
+      name: "Nikhil Admin",
+      email: adminEmail,
+      password: hashedPassword,
+      role: "admin",
+      cartData: {}
+    });
+    
+    await defaultAdmin.save();
+    console.log("\n🎉 Default Admin Created Successfully!");
+    console.log("====================================");
+    console.log("   Email: nikhiladmin@gmail.com");
+    console.log("   Password: adminnikhil");
+    console.log("====================================\n");
+  } catch (error) {
+    console.error("Error creating default admin:", error);
+  }
+};
+
+// Call createDefaultAdmin after mongoose connection
+mongoose.connection.once('open', () => {
+  createDefaultAdmin();
+});
+
+// User signup (only for regular users, admins are created manually)
 app.post("/signup", async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, confirmPassword } = req.body;
 
     // Validation
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !confirmPassword) {
       return res.status(400).json({
         success: false,
         errors: "All fields are required",
       });
     }
 
-    if (password.length < 6) {
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       return res.status(400).json({
         success: false,
-        errors: "Password must be at least 6 characters long",
+        errors: "Invalid email format",
       });
     }
 
+    // Password length validation (minimum 8 characters)
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        errors: "Password must be at least 8 characters long",
+      });
+    }
+
+    // Password match validation
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        errors: "Passwords do not match",
+      });
+    }
+
+    // Check for existing user
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({
@@ -416,6 +419,9 @@ app.post("/signup", async (req, res) => {
         errors: "User already exists with this email address",
       });
     }
+
+    // Hash password with bcrypt
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     // Initialize empty cart
     let cart = {};
@@ -426,7 +432,8 @@ app.post("/signup", async (req, res) => {
     const user = new User({
       name: username.trim(),
       email: email.toLowerCase().trim(),
-      password: password,
+      password: hashedPassword,
+      role: "user", // Signup is only for regular users
       cartData: cart,
     });
 
@@ -435,10 +442,11 @@ app.post("/signup", async (req, res) => {
     const data = {
       user: {
         id: user.id,
+        role: user.role,
       },
     };
 
-    const token = jwt.sign(data, "secret_ecom", { expiresIn: "7d" });
+    const token = jwt.sign(data, JWT_SECRET, { expiresIn: "7d" });
     
     console.log("User registered successfully:", user.email);
     res.json({ 
@@ -448,6 +456,7 @@ app.post("/signup", async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
       }
     });
   } catch (error) {
@@ -517,29 +526,113 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// User authentication middleware
-const fetchUser = async (req, res, next) => {
-  const token = req.header("auth-token");
-  
-  if (!token) {
-    return res.status(401).json({ 
-      success: false,
-      errors: "Access denied. No token provided." 
-    });
-  }
-
+// Protected route: Admin Dashboard
+app.get("/admin/dashboard", fetchAdmin, async (req, res) => {
   try {
-    const decoded = jwt.verify(token, "secret_ecom");
-    req.user = decoded.user;
-    next();
+    const user = await User.findById(req.user.id).select("-password");
+    const productCount = await Product.countDocuments();
+    const userCount = await User.countDocuments({ role: "user" });
+    
+    res.json({
+      success: true,
+      message: "Admin dashboard accessed",
+      admin: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      stats: {
+        totalProducts: productCount,
+        totalUsers: userCount,
+      }
+    });
   } catch (error) {
-    console.error("Token verification error:", error);
-    res.status(401).json({ 
+    console.error("Admin dashboard error:", error);
+    res.status(500).json({
       success: false,
-      errors: "Invalid or expired token" 
+      errors: "Failed to load admin dashboard"
     });
   }
-};
+});
+
+// Protected route: User Home
+app.get("/user/home", fetchUser, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    res.json({
+      success: true,
+      message: "User home accessed",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      }
+    });
+  } catch (error) {
+    console.error("User home error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to load user home"
+    });
+  }
+});
+
+// Endpoint to create admin (run once to set up admin)
+app.post("/create-admin", async (req, res) => {
+  try {
+    const { name, email, password, secretKey } = req.body;
+    
+    // Secret key to prevent unauthorized admin creation
+    if (secretKey !== process.env.ADMIN_SECRET_KEY && secretKey !== "INDRAMART_ADMIN_SECRET_2024") {
+      return res.status(403).json({
+        success: false,
+        errors: "Unauthorized admin creation attempt"
+      });
+    }
+
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ email: email.toLowerCase() });
+    if (existingAdmin) {
+      return res.status(400).json({
+        success: false,
+        errors: "User already exists with this email"
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+    const admin = new User({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      role: "admin",
+      cartData: {}
+    });
+
+    await admin.save();
+    console.log("Admin created successfully:", admin.email);
+    
+    res.json({
+      success: true,
+      message: "Admin account created successfully",
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+  } catch (error) {
+    console.error("Create admin error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to create admin account"
+    });
+  }
+});
 
 // New collections (latest 8 products)
 app.get("/newcollections", async (req, res) => {

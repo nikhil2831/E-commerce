@@ -3,6 +3,9 @@ import all_product from "../Components/Assets/all_product";
 
 export const ShopContext = createContext(null);
 
+// API Base URL
+const API_URL = process.env.REACT_APP_API_URL || 'https://e-commerce-hl6k.onrender.com';
+
 const getDefaultCart = () => {
     let cart = {};
     for(let i = 0; i < 1000; i++){ // Increased range for new products
@@ -17,12 +20,23 @@ const ShopContextProvider = (props) => {
     const [cartItems, setCartItems] = useState(getDefaultCart());
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userInfo, setUserInfo] = useState(null);
+    const [userRole, setUserRole] = useState(null);
 
     // Check if user is logged in
     useEffect(() => {
         const token = localStorage.getItem('auth-token');
+        const savedUser = localStorage.getItem('user-info');
         if (token) {
             setIsLoggedIn(true);
+            if (savedUser) {
+                try {
+                    const user = JSON.parse(savedUser);
+                    setUserInfo(user);
+                    setUserRole(user.role);
+                } catch (e) {
+                    console.error("Error parsing user info:", e);
+                }
+            }
             // Load cart from backend
             loadCartFromBackend();
         }
@@ -141,16 +155,20 @@ const ShopContextProvider = (props) => {
 
     const logout = () => {
         localStorage.removeItem('auth-token');
+        localStorage.removeItem('user-info');
         setIsLoggedIn(false);
         setUserInfo(null);
+        setUserRole(null);
         setCartItems(getDefaultCart());
-        window.location.replace('/');
+        window.location.replace('/login');
     };
 
     const login = (token, user) => {
         localStorage.setItem('auth-token', token);
+        localStorage.setItem('user-info', JSON.stringify(user));
         setIsLoggedIn(true);
         setUserInfo(user);
+        setUserRole(user.role);
     };
 
     const contextValue = {
@@ -162,6 +180,7 @@ const ShopContextProvider = (props) => {
         removeFromCart,
         isLoggedIn,
         userInfo,
+        userRole,
         logout,
         login
     };

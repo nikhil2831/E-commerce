@@ -450,3 +450,57 @@
   }
 }
 
+/* Error Styles */
+.error-banner {
+  background: rgba(220, 53, 69, 0.9);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  text-align: center;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.field-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.field-error {
+  display: block;
+  color: #ff6b6b;
+  font-size: 12px;
+  margin-top: 5px;
+  padding-left: 5px;
+  animation: fadeIn 0.3s ease;
+}
+
+.error-input {
+  border-color: #ff6b6b !important;
+  background: rgba(255, 107, 107, 0.1) !important;
+}
+
+.error-input:focus {
+  border-color: #ff6b6b !important;
+  box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.15) !important;
+}
+
+/* Mobile error styles */
+@media (max-width: 768px) {
+  .error-banner {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+  
+  .field-error {
+    font-size: 11px;
+  }
+}
+

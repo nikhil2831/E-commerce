@@ -30,8 +30,8 @@ const ListProduct = () => {
   }, [])
 
   const remove_product = async (id) => {
-    const adminToken = localStorage.getItem('admin-token');
-    if (!adminToken) {
+    const authToken = localStorage.getItem('auth-token');
+    if (!authToken) {
       alert('Admin authentication required. Please login again.');
       window.location.reload();
       return;
@@ -47,7 +47,7 @@ const ListProduct = () => {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          'admin-token': adminToken,
+          'auth-token': authToken,
         },
         body: JSON.stringify({id: id})
       });
