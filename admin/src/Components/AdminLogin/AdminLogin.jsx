@@ -22,7 +22,7 @@ const AdminLogin = ({ onLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.password) {
       setError('Please fill all fields');
       return;
@@ -32,7 +32,7 @@ const AdminLogin = ({ onLogin }) => {
     setError('');
 
     try {
-      
+
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: {
@@ -50,11 +50,17 @@ const AdminLogin = ({ onLogin }) => {
           setError('Access denied. Admin privileges required.');
           return;
         }
-        
+
+        console.log('AdminLogin - Login successful, storing data...');
+        console.log('AdminLogin - User data:', data.user);
+
         // Store auth token (same token for admin and users)
         localStorage.setItem('auth-token', data.token);
         localStorage.setItem('admin-info', JSON.stringify(data.user));
-        alert('Login successful!');
+
+        console.log('AdminLogin - Data stored, calling onLogin...');
+
+        // Call onLogin to update parent state and show dashboard
         onLogin(data.user);
       } else {
         setError(data.errors || 'Login failed');
@@ -72,9 +78,9 @@ const AdminLogin = ({ onLogin }) => {
       <div className="admin-login-container">
         <h1>Admin Login</h1>
         <p className="admin-subtitle">INDRAMART Admin Panel</p>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         <form onSubmit={handleSubmit}>
           <div className="form-field">
             <label>Email</label>
@@ -87,7 +93,7 @@ const AdminLogin = ({ onLogin }) => {
               required
             />
           </div>
-          
+
           <div className="form-field">
             <label>Password</label>
             <input
@@ -99,12 +105,12 @@ const AdminLogin = ({ onLogin }) => {
               required
             />
           </div>
-          
+
           <button type="submit" disabled={loading}>
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-        
+
         <p className="admin-note">
           Note: Admin accounts are created manually in the database.
         </p>
