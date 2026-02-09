@@ -1,13 +1,12 @@
 import React, { useContext, useState } from 'react';
 import { ShopContext } from '../Context/ShopContext';
 import './CSS/Checkout.css';
-import { useNavigate } from 'react-router-dom';
+
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://e-commerce-hl6k.onrender.com';
 
 const Checkout = () => {
-    const { getTotalCartAmount, all_product, cartItems, getDefaultCart } = useContext(ShopContext);
-    const navigate = useNavigate();
+    const { getTotalCartAmount, all_product, cartItems } = useContext(ShopContext);
 
     const [formData, setFormData] = useState({
         name: '',
