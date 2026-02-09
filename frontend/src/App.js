@@ -4,6 +4,7 @@ import Shop from './Pages/Shop';
 import ShopCategory from './Pages/ShopCategory';
 import Product from './Pages/Product';
 import Cart from './Pages/Cart';
+import Checkout from './Pages/Checkout';
 import LoginSignup from './Pages/LoginSignup';
 import Navbar from './Components/Navbar/Navbar';
 import Footer from './Components/Footer/Footer';
@@ -17,11 +18,11 @@ import banner_kids from './Components/Assets/banner_kids.png';
 // Protected Route Component
 function ProtectedRoute({ children }) {
   const { isLoggedIn } = useContext(ShopContext);
-  
+
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return children;
 }
 
@@ -36,10 +37,10 @@ function App() {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
         fontSize: '24px',
         color: '#333'
@@ -85,6 +86,11 @@ function App() {
           <Route path='/cart' element={
             <ProtectedRoute>
               <Cart />
+            </ProtectedRoute>
+          } />
+          <Route path='/checkout' element={
+            <ProtectedRoute>
+              <Checkout />
             </ProtectedRoute>
           } />
           <Route path='*' element={<Navigate to={isLoggedIn ? "/" : "/login"} replace />} />

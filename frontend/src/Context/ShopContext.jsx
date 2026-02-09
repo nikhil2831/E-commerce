@@ -8,19 +8,24 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://e-commerce-hl6k.onrend
 
 const getDefaultCart = () => {
     let cart = {};
-    for(let i = 0; i < 1000; i++){ // Increased range for new products
+    for (let i = 0; i < 1000; i++) { // Increased range for new products
         cart[i] = 0;
     }
     return cart;
 }
 
 const ShopContextProvider = (props) => {
-    // Always use local assets - they have proper images
-    const [allProducts] = useState(all_product);
+    const [allProducts, setAllProducts] = useState([]);
     const [cartItems, setCartItems] = useState(getDefaultCart());
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userInfo, setUserInfo] = useState(null);
     const [userRole, setUserRole] = useState(null);
+
+    useEffect(() => {
+        fetch(`${API_URL}/allproducts`)
+            .then((response) => response.json())
+            .then((data) => setAllProducts(data))
+    }, [])
 
     // Check if user is logged in
     useEffect(() => {
@@ -55,26 +60,26 @@ const ShopContextProvider = (props) => {
                 },
                 body: JSON.stringify({}),
             })
-            .then((response) => response.json())
-            .then((data) => {
-                if (data && typeof data === 'object') {
-                    setCartItems(data);
-                }
-            })
-            .catch((error) => console.error("Error loading cart:", error));
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data && typeof data === 'object') {
+                        setCartItems(data);
+                    }
+                })
+                .catch((error) => console.error("Error loading cart:", error));
         }
     };
 
     // We're using local all_product.js which has proper images from Assets folder
     // No need to fetch from backend and override with broken image URLs
-    
+
     const addToCart = (itemId) => {
-        setCartItems((prev) => ({ 
-            ...prev, 
-            [itemId]: (prev[itemId] || 0) + 1 
+        setCartItems((prev) => ({
+            ...prev,
+            [itemId]: (prev[itemId] || 0) + 1
         }));
-        
-        if(localStorage.getItem('auth-token')) {
+
+        if (localStorage.getItem('auth-token')) {
             fetch(`${API_URL}/addtocart`, {
                 method: 'POST',
                 headers: {
@@ -82,19 +87,19 @@ const ShopContextProvider = (props) => {
                     'auth-token': `${localStorage.getItem('auth-token')}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({"itemId": itemId}),
+                body: JSON.stringify({ "itemId": itemId }),
             })
-            .catch((error) => console.error("Error adding to cart:", error));
+                .catch((error) => console.error("Error adding to cart:", error));
         }
     }
 
     const removeFromCart = (itemId) => {
-        setCartItems((prev) => ({ 
-            ...prev, 
+        setCartItems((prev) => ({
+            ...prev,
             [itemId]: Math.max((prev[itemId] || 0) - 1, 0)
         }));
 
-        if(localStorage.getItem('auth-token')) {
+        if (localStorage.getItem('auth-token')) {
             fetch(`${API_URL}/removefromcart`, {
                 method: 'POST',
                 headers: {
@@ -102,18 +107,18 @@ const ShopContextProvider = (props) => {
                     'auth-token': `${localStorage.getItem('auth-token')}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({"itemId": itemId}),
+                body: JSON.stringify({ "itemId": itemId }),
             })
-            .catch((error) => console.error("Error removing from cart:", error));
+                .catch((error) => console.error("Error removing from cart:", error));
         }
     }
 
-    const getTotalCartAmount = () => { 
+    const getTotalCartAmount = () => {
         let totalAmount = 0;
-        for(const item in cartItems){
-            if(cartItems[item] > 0) {
+        for (const item in cartItems) {
+            if (cartItems[item] > 0) {
                 let itemInfo = allProducts.find((product) => product.id === Number(item));
-                if(itemInfo) {
+                if (itemInfo) {
                     totalAmount += itemInfo.new_price * cartItems[item];
                 }
             }
@@ -121,10 +126,10 @@ const ShopContextProvider = (props) => {
         return totalAmount;
     }
 
-    const getTotalCartItems = () => { 
+    const getTotalCartItems = () => {
         let totalItem = 0;
-        for(const item in cartItems){
-            if(cartItems[item] > 0) {
+        for (const item in cartItems) {
+            if (cartItems[item] > 0) {
                 totalItem += cartItems[item];
             }
         }
@@ -132,7 +137,7 @@ const ShopContextProvider = (props) => {
     }
 
     useEffect(() => {
-        if(localStorage.getItem('auth-token')) {
+        if (localStorage.getItem('auth-token')) {
             setIsLoggedIn(true);
             fetch(`${API_URL}/getcart`, {
                 method: 'POST',
@@ -143,13 +148,13 @@ const ShopContextProvider = (props) => {
                 },
                 body: "",
             })
-            .then((response) => response.json())
-            .then((data) => {
-                if(data && typeof data === 'object') {
-                    setCartItems(data);
-                }
-            })
-            .catch((error) => console.error("Error loading cart:", error));
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data && typeof data === 'object') {
+                        setCartItems(data);
+                    }
+                })
+                .catch((error) => console.error("Error loading cart:", error));
         }
     }, []);
 
@@ -172,11 +177,11 @@ const ShopContextProvider = (props) => {
     };
 
     const contextValue = {
-        getTotalCartItems, 
+        getTotalCartItems,
         getTotalCartAmount,
         all_product: allProducts,
-        cartItems, 
-        addToCart, 
+        cartItems,
+        addToCart,
         removeFromCart,
         isLoggedIn,
         userInfo,

@@ -1,0 +1,83 @@
+.list-user {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 30px;
+    box-sizing: border-box;
+    background: white;
+    margin: 20px;
+    border-radius: 10px;
+}
+
+.list-user h1 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.list-user-format-main {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    padding: 15px;
+    background: #f1f2f6;
+    color: #454545;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.list-user-allusers {
+    width: 100%;
+}
+
+.list-user-format {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    padding: 15px;
+    align-items: center;
+    border-bottom: 1px solid #e1e1e1;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.list-user-format:hover {
+    background: #fafafa;
+}
+
+.user-name {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+    text-align: center;
+    width: fit-content;
+}
+
+.role-badge.user {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.role-badge.admin {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.loading,
+.no-users {
+    text-align: center;
+    margin-top: 50px;
+    color: #666;
+    font-size: 16px;
+}

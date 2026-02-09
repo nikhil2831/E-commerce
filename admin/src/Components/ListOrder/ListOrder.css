@@ -1,0 +1,166 @@
+.list-order {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 30px;
+    box-sizing: border-box;
+    background: white;
+    margin: 20px;
+    border-radius: 10px;
+}
+
+.list-order h1 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.list-order-format-main {
+    display: grid;
+    grid-template-columns: 1fr 2fr 2fr 1fr 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    padding: 15px;
+    background: #f1f2f6;
+    color: #454545;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.list-order-allorders {
+    width: 100%;
+}
+
+.list-order-format {
+    display: grid;
+    grid-template-columns: 1fr 2fr 2fr 1fr 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    padding: 15px;
+    align-items: start;
+    border-bottom: 1px solid #e1e1e1;
+    font-size: 14px;
+}
+
+.order-id {
+    font-weight: bold;
+    color: #333;
+}
+
+.order-date {
+    font-size: 12px;
+    color: #888;
+    font-weight: normal;
+}
+
+.order-user-details p {
+    margin: 2px 0;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.address-text {
+    font-size: 13px;
+    color: #666;
+}
+
+.order-products {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.order-product-item {
+    font-size: 13px;
+    color: #444;
+}
+
+.order-amount {
+    font-weight: 600;
+    color: #27ae60;
+}
+
+.status-select select {
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.status-pending {
+    background-color: #fce4ec;
+    color: #c2185b;
+}
+
+.status-confirmed {
+    background-color: #e3f2fd;
+    color: #1565c0;
+}
+
+.status-shipped {
+    background-color: #fff3e0;
+    color: #e65100;
+}
+
+.status-delivered {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-cancelled {
+    background-color: #ffcdd2;
+    color: #c62828;
+}
+
+.payment-pending {
+    color: #f39c12;
+    font-weight: bold;
+}
+
+.payment-paid {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.payment-failed {
+    color: #c0392b;
+    font-weight: bold;
+}
+
+.loading,
+.no-orders {
+    text-align: center;
+    margin-top: 50px;
+    color: #666;
+    font-size: 16px;
+}
+
+@media (max-width: 1000px) {
+
+    .list-order-format-main,
+    .list-order-format {
+        grid-template-columns: 1fr 1.5fr 1fr;
+        font-size: 13px;
+    }
+
+    .list-order-format {
+        grid-template-rows: auto auto;
+        gap: 15px;
+    }
+
+    .order-id,
+    .order-user-details,
+    .order-products {
+        grid-column: span 1;
+    }
+
+    .order-amount,
+    .status-select {
+        grid-column: span 1;
+    }
+}

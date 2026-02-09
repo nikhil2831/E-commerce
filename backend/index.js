@@ -113,6 +113,11 @@ const Product = mongoose.model("Product", {
     required: true,
     min: 0,
   },
+  stock: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   date: {
     type: Date,
     default: Date.now,
@@ -123,14 +128,102 @@ const Product = mongoose.model("Product", {
   },
 });
 
+// Address Schema
+const Address = mongoose.model("Address", {
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Users',
+    required: true,
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  phone: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  address: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  city: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  pincode: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  isDefault: {
+    type: Boolean,
+    default: false,
+  },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Order Schema
+const Order = mongoose.model("Order", {
+  orderId: {
+    type: String,
+    unique: true,
+    required: true,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Users',
+    required: true,
+  },
+  products: [{
+    productId: Number,
+    name: String,
+    quantity: Number,
+    price: Number,
+    image: String,
+  }],
+  address: {
+    name: String,
+    phone: String,
+    address: String,
+    city: String,
+    pincode: String,
+  },
+  totalAmount: {
+    type: Number,
+    required: true,
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed'],
+    default: 'pending',
+  },
+  orderStatus: {
+    type: String,
+    enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
+    default: 'pending',
+  },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 // User authentication middleware
 const fetchUser = async (req, res, next) => {
   const token = req.header("auth-token");
-  
+
   if (!token) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       success: false,
-      errors: "Access denied. No token provided." 
+      errors: "Access denied. No token provided."
     });
   }
 
@@ -140,9 +233,9 @@ const fetchUser = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Token verification error:", error);
-    res.status(401).json({ 
+    res.status(401).json({
       success: false,
-      errors: "Invalid or expired token" 
+      errors: "Invalid or expired token"
     });
   }
 };
@@ -150,11 +243,11 @@ const fetchUser = async (req, res, next) => {
 // Admin-only middleware (checks if user has admin role)
 const fetchAdmin = async (req, res, next) => {
   const token = req.header("auth-token");
-  
+
   if (!token) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       success: false,
-      errors: "Access denied. Admin authentication required." 
+      errors: "Access denied. Admin authentication required."
     });
   }
 
@@ -170,9 +263,9 @@ const fetchAdmin = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Admin token verification error:", error);
-    res.status(401).json({ 
+    res.status(401).json({
       success: false,
-      errors: "Invalid or expired admin token" 
+      errors: "Invalid or expired admin token"
     });
   }
 };
@@ -232,7 +325,7 @@ app.post("/removeproduct", fetchAdmin, async (req, res) => {
     }
 
     const deletedProduct = await Product.findOneAndDelete({ id: Number(id) });
-    
+
     if (!deletedProduct) {
       return res.status(404).json({
         success: false,
@@ -277,15 +370,15 @@ app.get("/products/:category", async (req, res) => {
   try {
     const category = req.params.category.toLowerCase();
     let products;
-    
+
     if (category === "all") {
       products = await Product.find({}).sort({ date: -1 });
     } else {
-      products = await Product.find({ 
-        category: { $regex: new RegExp(category, 'i') } 
+      products = await Product.find({
+        category: { $regex: new RegExp(category, 'i') }
       }).sort({ date: -1 });
     }
-    
+
     console.log(`Fetched ${products.length} products for category: ${category}`);
     res.json(products);
   } catch (error) {
@@ -337,17 +430,17 @@ const createDefaultAdmin = async () => {
   try {
     const adminEmail = "nikhiladmin@gmail.com";
     const adminPassword = "adminnikhil";
-    
+
     // Check if default admin already exists
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (existingAdmin) {
       console.log("✅ Default admin already exists");
       return;
     }
-    
+
     // Hash password
     const hashedPassword = await bcrypt.hash(adminPassword, SALT_ROUNDS);
-    
+
     // Create default admin
     const defaultAdmin = new User({
       name: "Nikhil Admin",
@@ -356,7 +449,7 @@ const createDefaultAdmin = async () => {
       role: "admin",
       cartData: {}
     });
-    
+
     await defaultAdmin.save();
     console.log("\n🎉 Default Admin Created Successfully!");
     console.log("====================================");
@@ -447,10 +540,10 @@ app.post("/signup", async (req, res) => {
     };
 
     const token = jwt.sign(data, JWT_SECRET, { expiresIn: "7d" });
-    
+
     console.log("User registered successfully:", user.email);
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       token,
       user: {
         id: user.id,
@@ -506,10 +599,10 @@ app.post("/login", async (req, res) => {
     };
 
     const token = jwt.sign(data, JWT_SECRET, { expiresIn: "7d" });
-    
+
     console.log("User logged in successfully:", user.email);
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       token,
       user: {
         id: user.id,
@@ -534,7 +627,7 @@ app.get("/admin/dashboard", fetchAdmin, async (req, res) => {
     const user = await User.findById(req.user.id).select("-password");
     const productCount = await Product.countDocuments();
     const userCount = await User.countDocuments({ role: "user" });
-    
+
     res.json({
       success: true,
       message: "Admin dashboard accessed",
@@ -585,7 +678,7 @@ app.get("/user/home", fetchUser, async (req, res) => {
 app.post("/create-admin", async (req, res) => {
   try {
     const { name, email, password, secretKey } = req.body;
-    
+
     // Secret key to prevent unauthorized admin creation
     if (secretKey !== process.env.ADMIN_SECRET_KEY && secretKey !== "INDRAMART_ADMIN_SECRET_2024") {
       return res.status(403).json({
@@ -616,7 +709,7 @@ app.post("/create-admin", async (req, res) => {
 
     await admin.save();
     console.log("Admin created successfully:", admin.email);
-    
+
     res.json({
       success: true,
       message: "Admin account created successfully",
@@ -655,10 +748,10 @@ app.get("/newcollections", async (req, res) => {
 // Popular in women
 app.get("/popularinwomen", async (req, res) => {
   try {
-    const products = await Product.find({ 
-      category: { $regex: /women/i } 
+    const products = await Product.find({
+      category: { $regex: /women/i }
     }).sort({ date: -1 }).limit(4);
-    
+
     console.log(`Popular in women fetched: ${products.length} products`);
     res.json(products);
   } catch (error) {
@@ -674,10 +767,10 @@ app.get("/popularinwomen", async (req, res) => {
 // Popular in men
 app.get("/popularinmen", async (req, res) => {
   try {
-    const products = await Product.find({ 
-      category: { $regex: /men/i } 
+    const products = await Product.find({
+      category: { $regex: /men/i }
     }).sort({ date: -1 }).limit(4);
-    
+
     console.log(`Popular in men fetched: ${products.length} products`);
     res.json(products);
   } catch (error) {
@@ -693,10 +786,10 @@ app.get("/popularinmen", async (req, res) => {
 // Popular in kids
 app.get("/popularinkids", async (req, res) => {
   try {
-    const products = await Product.find({ 
-      category: { $regex: /kid/i } 
+    const products = await Product.find({
+      category: { $regex: /kid/i }
     }).sort({ date: -1 }).limit(4);
-    
+
     console.log(`Popular in kids fetched: ${products.length} products`);
     res.json(products);
   } catch (error) {
@@ -735,7 +828,7 @@ app.post("/addtocart", fetchUser, async (req, res) => {
     userData.cartData[itemId] += 1;
 
     await User.findOneAndUpdate(
-      { _id: req.user.id }, 
+      { _id: req.user.id },
       { cartData: userData.cartData }
     );
 
@@ -780,7 +873,7 @@ app.post("/removefromcart", fetchUser, async (req, res) => {
     }
 
     await User.findOneAndUpdate(
-      { _id: req.user.id }, 
+      { _id: req.user.id },
       { cartData: userData.cartData }
     );
 
@@ -822,6 +915,385 @@ app.post("/getcart", fetchUser, async (req, res) => {
     });
   }
 });
+
+// ==================== ADDRESS ENDPOINTS ====================
+
+// Add new address
+app.post("/address", fetchUser, async (req, res) => {
+  try {
+    const { name, phone, address, city, pincode, isDefault } = req.body;
+
+    if (!name || !phone || !address || !city || !pincode) {
+      return res.status(400).json({
+        success: false,
+        errors: "All address fields are required",
+      });
+    }
+
+    // If this is marked as default, unset other defaults
+    if (isDefault) {
+      await Address.updateMany(
+        { userId: req.user.id },
+        { isDefault: false }
+      );
+    }
+
+    const newAddress = new Address({
+      userId: req.user.id,
+      name: name.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      city: city.trim(),
+      pincode: pincode.trim(),
+      isDefault: isDefault || false,
+    });
+
+    await newAddress.save();
+    console.log(`Address saved for user ${req.user.id}`);
+
+    res.json({
+      success: true,
+      message: "Address saved successfully",
+      address: newAddress,
+    });
+  } catch (error) {
+    console.error("Add address error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to save address",
+      details: error.message,
+    });
+  }
+});
+
+// Get user addresses
+app.get("/addresses", fetchUser, async (req, res) => {
+  try {
+    const addresses = await Address.find({ userId: req.user.id }).sort({ date: -1 });
+    res.json({
+      success: true,
+      addresses,
+    });
+  } catch (error) {
+    console.error("Get addresses error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to get addresses",
+    });
+  }
+});
+
+// ==================== ORDER ENDPOINTS ====================
+
+// Generate unique order ID
+const generateOrderId = () => {
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  return `ORD-${timestamp}-${randomStr}`.toUpperCase();
+};
+
+// Create order
+app.post("/order", fetchUser, async (req, res) => {
+  try {
+    const { products, address } = req.body;
+
+    if (!products || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        errors: "Products are required",
+      });
+    }
+
+    if (!address || !address.name || !address.phone || !address.address || !address.city || !address.pincode) {
+      return res.status(400).json({
+        success: false,
+        errors: "Complete address is required",
+      });
+    }
+
+    // Validate stock and calculate total
+    let totalAmount = 0;
+    const orderProducts = [];
+
+    for (const item of products) {
+      const product = await Product.findOne({ id: item.productId });
+
+      if (!product) {
+        return res.status(400).json({
+          success: false,
+          errors: `Product with ID ${item.productId} not found`,
+        });
+      }
+
+      if (product.stock < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          errors: `Insufficient stock for ${product.name}. Available: ${product.stock}`,
+        });
+      }
+
+      orderProducts.push({
+        productId: product.id,
+        name: product.name,
+        quantity: item.quantity,
+        price: product.new_price,
+        image: product.image,
+      });
+
+      totalAmount += product.new_price * item.quantity;
+    }
+
+    // Reduce stock for each product
+    for (const item of products) {
+      await Product.findOneAndUpdate(
+        { id: item.productId },
+        { $inc: { stock: -item.quantity } }
+      );
+    }
+
+    // Clear user's cart
+    await User.findOneAndUpdate(
+      { _id: req.user.id },
+      { cartData: {} }
+    );
+
+    // Create order
+    const order = new Order({
+      orderId: generateOrderId(),
+      userId: req.user.id,
+      products: orderProducts,
+      address: {
+        name: address.name,
+        phone: address.phone,
+        address: address.address,
+        city: address.city,
+        pincode: address.pincode,
+      },
+      totalAmount,
+      paymentStatus: 'pending',
+      orderStatus: 'pending',
+    });
+
+    await order.save();
+    console.log(`Order ${order.orderId} created for user ${req.user.id}`);
+
+    res.json({
+      success: true,
+      message: "Order placed successfully",
+      order: {
+        orderId: order.orderId,
+        totalAmount: order.totalAmount,
+        orderStatus: order.orderStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Create order error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to create order",
+      details: error.message,
+    });
+  }
+});
+
+// Get user's orders
+app.get("/orders", fetchUser, async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.user.id }).sort({ date: -1 });
+    res.json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    console.error("Get orders error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to get orders",
+    });
+  }
+});
+
+// ==================== ADMIN ENDPOINTS ====================
+
+// Admin dashboard stats
+app.get("/admin/stats", fetchAdmin, async (req, res) => {
+  try {
+    const totalProducts = await Product.countDocuments();
+    const totalUsers = await User.countDocuments({ role: "user" });
+    const totalOrders = await Order.countDocuments();
+    const orders = await Order.find({});
+
+    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const pendingOrders = await Order.countDocuments({ orderStatus: "pending" });
+    const lowStockProducts = await Product.countDocuments({ stock: { $lt: 10, $gt: 0 } });
+    const outOfStockProducts = await Product.countDocuments({ stock: 0 });
+
+    res.json({
+      success: true,
+      stats: {
+        totalProducts,
+        totalUsers,
+        totalOrders,
+        totalRevenue,
+        pendingOrders,
+        lowStockProducts,
+        outOfStockProducts,
+      },
+    });
+  } catch (error) {
+    console.error("Admin stats error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to get admin stats",
+    });
+  }
+});
+
+// Get all orders (admin)
+app.get("/admin/orders", fetchAdmin, async (req, res) => {
+  try {
+    const orders = await Order.find({}).sort({ date: -1 });
+
+    // Get user info for each order
+    const ordersWithUsers = await Promise.all(orders.map(async (order) => {
+      const user = await User.findById(order.userId).select('name email');
+      return {
+        ...order.toObject(),
+        user: user ? { name: user.name, email: user.email } : null,
+      };
+    }));
+
+    res.json({
+      success: true,
+      orders: ordersWithUsers,
+    });
+  } catch (error) {
+    console.error("Get all orders error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to get orders",
+    });
+  }
+});
+
+// Update order status (admin)
+app.put("/admin/order/:orderId", fetchAdmin, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { orderStatus, paymentStatus } = req.body;
+
+    const updateData = {};
+    if (orderStatus) updateData.orderStatus = orderStatus;
+    if (paymentStatus) updateData.paymentStatus = paymentStatus;
+
+    const order = await Order.findOneAndUpdate(
+      { orderId },
+      updateData,
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        errors: "Order not found",
+      });
+    }
+
+    console.log(`Order ${orderId} updated by admin`);
+    res.json({
+      success: true,
+      message: "Order updated successfully",
+      order,
+    });
+  } catch (error) {
+    console.error("Update order error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to update order",
+    });
+  }
+});
+
+// Get all users (admin)
+app.get("/admin/users", fetchAdmin, async (req, res) => {
+  try {
+    const users = await User.find({ role: "user" })
+      .select('-password -cartData')
+      .sort({ date: -1 });
+
+    res.json({
+      success: true,
+      users,
+    });
+  } catch (error) {
+    console.error("Get all users error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to get users",
+    });
+  }
+});
+
+// Get low stock products (admin)
+app.get("/admin/low-stock", fetchAdmin, async (req, res) => {
+  try {
+    const lowStockProducts = await Product.find({ stock: { $lt: 10 } }).sort({ stock: 1 });
+    res.json({
+      success: true,
+      products: lowStockProducts,
+    });
+  } catch (error) {
+    console.error("Get low stock error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to get low stock products",
+    });
+  }
+});
+
+// Update product (admin)
+app.put("/product/:id", fetchAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, new_price, old_price, stock, category, available } = req.body;
+
+    const updateData = {};
+    if (name) updateData.name = name.trim();
+    if (new_price !== undefined) updateData.new_price = Number(new_price);
+    if (old_price !== undefined) updateData.old_price = Number(old_price);
+    if (stock !== undefined) updateData.stock = Number(stock);
+    if (category) updateData.category = category.toLowerCase().trim();
+    if (available !== undefined) updateData.available = available;
+
+    const product = await Product.findOneAndUpdate(
+      { id: Number(id) },
+      updateData,
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        errors: "Product not found",
+      });
+    }
+
+    console.log(`Product ${id} updated by admin`);
+    res.json({
+      success: true,
+      message: "Product updated successfully",
+      product,
+    });
+  } catch (error) {
+    console.error("Update product error:", error);
+    res.status(500).json({
+      success: false,
+      errors: "Failed to update product",
+    });
+  }
+});
+
+// ==================== END NEW ENDPOINTS ====================
 
 // Global error handler
 app.use((error, req, res, next) => {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import "./ListProduct.css"
 import cross_icon from "../../assets/cross_icon.png"
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://e-commerce-hl6k.onrender.com';
 const PLACEHOLDER_IMAGE = "https://via.placeholder.com/60x60?text=No+Image";
 
 // Helper function to get proper image URL
@@ -9,7 +10,7 @@ const getImageUrl = (image) => {
   if (!image) return PLACEHOLDER_IMAGE;
   if (typeof image === 'object') return image;
   if (image.startsWith('http')) return image;
-  return `http://localhost:4000/images/${image}`;
+  return `${API_URL}/images/${image}`;
 };
 
 const ListProduct = () => {
@@ -17,7 +18,7 @@ const ListProduct = () => {
 
   const fetchInfo = async () => {
     try {
-      const response = await fetch('https://e-commerce-hl6k.onrender.com/allproducts');
+      const response = await fetch(`${API_URL}/allproducts`);
       const data = await response.json();
       setAllproducts(data);
     } catch (error) {
@@ -42,18 +43,18 @@ const ListProduct = () => {
     }
 
     try {
-      const response = await fetch('https://e-commerce-hl6k.onrender.com/removeproduct', {
+      const response = await fetch(`${API_URL}/removeproduct`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'auth-token': authToken,
         },
-        body: JSON.stringify({id: id})
+        body: JSON.stringify({ id: id })
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         alert('Product removed successfully!');
         await fetchInfo();
@@ -66,6 +67,31 @@ const ListProduct = () => {
     }
   }
 
+  const updateStock = async (id, newStock) => {
+    const stockValue = Number(newStock);
+    if (stockValue < 0) return;
+
+    try {
+      const authToken = localStorage.getItem('auth-token');
+      const response = await fetch(`${API_URL}/product/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'auth-token': authToken,
+        },
+        body: JSON.stringify({ stock: stockValue })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        console.log("Stock updated");
+      }
+    } catch (error) {
+      console.error("Error updating stock:", error);
+    }
+  }
+
   return (
     <div className='list-product'>
       <h1>All Products List</h1>
@@ -75,6 +101,7 @@ const ListProduct = () => {
         <p>Old Price</p>
         <p>New Price</p>
         <p>Category</p>
+        <p>Stock</p>
         <p>Remove</p>
       </div>
       <div className="listproduct-allproducts">
@@ -83,9 +110,9 @@ const ListProduct = () => {
           return (
             <React.Fragment key={product.id || index}>
               <div className="listproduct-format-main listproduct-format">
-                <img 
-                  src={getImageUrl(product.image)} 
-                  alt="" 
+                <img
+                  src={getImageUrl(product.image)}
+                  alt=""
                   className="listproduct-product-icon"
                   onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                 />
@@ -93,11 +120,17 @@ const ListProduct = () => {
                 <p>₹{product.old_price}</p>
                 <p>₹{product.new_price}</p>
                 <p>{product.category}</p>
-                <img 
-                  onClick={() => {remove_product(product.id)}} 
-                  className='listproduct-remove-icon' 
-                  src={cross_icon} 
-                  alt="" 
+                <input
+                  type="number"
+                  className="listproduct-stock-input"
+                  defaultValue={product.stock || 0}
+                  onBlur={(e) => updateStock(product.id, e.target.value)}
+                />
+                <img
+                  onClick={() => { remove_product(product.id) }}
+                  className='listproduct-remove-icon'
+                  src={cross_icon}
+                  alt=""
                 />
               </div>
               <hr />
