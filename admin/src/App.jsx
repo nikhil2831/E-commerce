@@ -9,33 +9,34 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for token in URL (from user site redirect)
-    const queryParams = new URLSearchParams(window.location.search);
-    const urlToken = queryParams.get('token');
+    const checkAuth = async () => {
+      // Check for token in URL (from user site redirect)
+      const queryParams = new URLSearchParams(window.location.search);
+      const urlToken = queryParams.get('token');
 
-    if (urlToken) {
-      localStorage.setItem('auth-token', urlToken);
-      // Clean URL
-      window.history.replaceState({}, document.title, "/");
-    }
+      if (urlToken) {
+        localStorage.setItem('auth-token', urlToken);
+        // Clean URL
+        window.history.replaceState({}, document.title, "/");
+      }
 
-    // Check auth
-    const token = localStorage.getItem('auth-token');
-    const savedAdminInfo = localStorage.getItem('admin-info');
+      // Check auth
+      const token = localStorage.getItem('auth-token');
+      const savedAdminInfo = localStorage.getItem('admin-info');
 
-    if (token) {
-      // If we have token but no info (or just to verify), let's try to fetch dashboard/verify
-      if (!savedAdminInfo) {
-        const API_URL = import.meta.env.VITE_API_URL || 'https://e-commerce-hl6k.onrender.com';
-        fetch(`${API_URL}/admin/dashboard`, {
-          method: 'GET',
-          headers: {
-            'auth-token': token,
-            'Content-Type': 'application/json'
-          }
-        })
-          .then(res => res.json())
-          .then(data => {
+      if (token) {
+        // If we have token but no info (or just to verify), let's try to fetch dashboard/verify
+        if (!savedAdminInfo) {
+          const API_URL = import.meta.env.VITE_API_URL || 'https://e-commerce-hl6k.onrender.com';
+          try {
+            const res = await fetch(`${API_URL}/admin/dashboard`, {
+              method: 'GET',
+              headers: {
+                'auth-token': token,
+                'Content-Type': 'application/json'
+              }
+            });
+            const data = await res.json();
             if (data.success && data.admin) {
               localStorage.setItem('admin-info', JSON.stringify(data.admin));
               if (data.admin.role === 'admin') {
@@ -46,32 +47,38 @@ const App = () => {
                 localStorage.removeItem('auth-token');
                 const userUrl = import.meta.env.VITE_USER_URL || 'http://localhost:3000';
                 window.location.href = `${userUrl}/login`;
+                return; // Early return to avoid setLoading(false)
               }
             } else {
               // Invalid token
               localStorage.removeItem('auth-token');
             }
-          })
-          .catch(err => console.error("Verify token error:", err));
-      } else {
-        // We have both, verify role matches
-        try {
-          const adminData = JSON.parse(savedAdminInfo);
-          if (adminData.role === 'admin') {
-            setIsAuthenticated(true);
-            setAdminInfo(adminData);
-          } else {
+          } catch (err) {
+            console.error("Verify token error:", err);
+            localStorage.removeItem('auth-token');
+          }
+        } else {
+          // We have both, verify role matches
+          try {
+            const adminData = JSON.parse(savedAdminInfo);
+            if (adminData.role === 'admin') {
+              setIsAuthenticated(true);
+              setAdminInfo(adminData);
+            } else {
+              localStorage.removeItem('auth-token');
+              localStorage.removeItem('admin-info');
+            }
+          } catch (e) {
             localStorage.removeItem('auth-token');
             localStorage.removeItem('admin-info');
           }
-        } catch (e) {
-          localStorage.removeItem('auth-token');
-          localStorage.removeItem('admin-info');
         }
       }
-    }
 
-    setLoading(false);
+      setLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
   const handleLogin = (admin) => {
