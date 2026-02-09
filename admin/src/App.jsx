@@ -9,33 +9,67 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if admin is already logged in (using unified auth-token)
+    // Check for token in URL (from user site redirect)
+    const queryParams = new URLSearchParams(window.location.search);
+    const urlToken = queryParams.get('token');
+
+    if (urlToken) {
+      localStorage.setItem('auth-token', urlToken);
+      // Clean URL
+      window.history.replaceState({}, document.title, "/");
+    }
+
+    // Check auth
     const token = localStorage.getItem('auth-token');
     const savedAdminInfo = localStorage.getItem('admin-info');
 
-    console.log('App.jsx - Checking auth:', { token: !!token, savedAdminInfo });
-
-    if (token && savedAdminInfo) {
-      try {
-        const adminData = JSON.parse(savedAdminInfo);
-        console.log('App.jsx - Parsed admin data:', adminData);
-        // Verify it's an admin user
-        if (adminData.role === 'admin') {
-          console.log('App.jsx - Admin verified, setting authenticated');
-          setIsAuthenticated(true);
-          setAdminInfo(adminData);
-        } else {
-          console.log('App.jsx - Not an admin role:', adminData.role);
-          // Not an admin, clear the stored data
+    if (token) {
+      // If we have token but no info (or just to verify), let's try to fetch dashboard/verify
+      if (!savedAdminInfo) {
+        const API_URL = import.meta.env.VITE_API_URL || 'https://e-commerce-hl6k.onrender.com';
+        fetch(`${API_URL}/admin/dashboard`, {
+          method: 'GET',
+          headers: {
+            'auth-token': token,
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.admin) {
+              localStorage.setItem('admin-info', JSON.stringify(data.admin));
+              if (data.admin.role === 'admin') {
+                setIsAuthenticated(true);
+                setAdminInfo(data.admin);
+              } else {
+                // Not admin
+                localStorage.removeItem('auth-token');
+                window.location.href = 'http://localhost:3000/login';
+              }
+            } else {
+              // Invalid token
+              localStorage.removeItem('auth-token');
+            }
+          })
+          .catch(err => console.error("Verify token error:", err));
+      } else {
+        // We have both, verify role matches
+        try {
+          const adminData = JSON.parse(savedAdminInfo);
+          if (adminData.role === 'admin') {
+            setIsAuthenticated(true);
+            setAdminInfo(adminData);
+          } else {
+            localStorage.removeItem('auth-token');
+            localStorage.removeItem('admin-info');
+          }
+        } catch (e) {
           localStorage.removeItem('auth-token');
           localStorage.removeItem('admin-info');
         }
-      } catch (e) {
-        console.error("Error parsing admin info:", e);
-        localStorage.removeItem('auth-token');
-        localStorage.removeItem('admin-info');
       }
     }
+
     setLoading(false);
   }, []);
 
@@ -51,6 +85,8 @@ const App = () => {
     localStorage.removeItem('admin-info');
     setIsAuthenticated(false);
     setAdminInfo(null);
+    // Redirect to User Login for unified experience
+    window.location.href = 'http://localhost:3000/login';
   };
 
   if (loading) {
