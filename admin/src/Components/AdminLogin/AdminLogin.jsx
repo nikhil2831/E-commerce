@@ -49,7 +49,8 @@ const AdminLogin = ({ onLogin }) => {
         if (data.user.role !== 'admin') {
           // Redirect regular users to the main website (unified login flow)
           alert('Logged in as standard user. Redirecting to main website...');
-          window.location.href = 'http://localhost:3000/login';
+          const userUrl = import.meta.env.VITE_USER_URL || 'http://localhost:3000';
+          window.location.href = `${userUrl}/login`;
           return;
         }
 

@@ -90,7 +90,8 @@ export default function LoginSignup() {
           // Redirect to admin panel
           // Redirect to admin panel with token
           alert('Login successful! Redirecting to Admin Dashboard...');
-          window.location.href = `http://localhost:5173?token=${responseData.token}`; // Admin panel URL with token
+          const adminUrl = process.env.REACT_APP_ADMIN_URL || 'http://localhost:5173';
+          window.location.href = `${adminUrl}?token=${responseData.token}`;
         } else {
           // Redirect to user e-commerce site
           alert('Login successful!');

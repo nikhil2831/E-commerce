@@ -44,7 +44,8 @@ const App = () => {
               } else {
                 // Not admin
                 localStorage.removeItem('auth-token');
-                window.location.href = 'http://localhost:3000/login';
+                const userUrl = import.meta.env.VITE_USER_URL || 'http://localhost:3000';
+                window.location.href = `${userUrl}/login`;
               }
             } else {
               // Invalid token
@@ -86,7 +87,9 @@ const App = () => {
     setIsAuthenticated(false);
     setAdminInfo(null);
     // Redirect to User Login for unified experience
-    window.location.href = 'http://localhost:3000/login';
+    // Redirect to User Login for unified experience
+    const userUrl = import.meta.env.VITE_USER_URL || 'http://localhost:3000';
+    window.location.href = `${userUrl}/login`;
   };
 
   if (loading) {
