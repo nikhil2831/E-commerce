@@ -101,7 +101,10 @@ const App = () => {
   }
 
   if (!isAuthenticated) {
-    return <AdminLogin onLogin={handleLogin} />;
+    // Redirect to User Login Page (Single Entry Point)
+    const userUrl = import.meta.env.VITE_USER_URL || 'http://localhost:3000';
+    window.location.href = `${userUrl}/login`;
+    return null;
   }
 
   return (
